@@ -1,2 +1,5 @@
 # snyk
 .dccache
+
+# ignore venv
+builder/
