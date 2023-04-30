@@ -1,7 +1,17 @@
 ---
 collections:
+  - ansible.netcommon
+  - ansible.network
   - community.general
   - ansible.posix
-  - community.docker
   - networktocode.nautobot
+  - community.routeros
+  - cisco.asa
+  - cisco.ios
+  - cisco.iosxr
+  - cisco.nxos
+  - junipernetworks.junos
+  - arista.eos
+  - paloaltonetworks.panos
+
 

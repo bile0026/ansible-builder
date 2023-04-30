@@ -1,6 +1,7 @@
 ---
 collections:
   - ansible.netcommon
+  - ansible.network
   - community.general
   - ansible.posix
   - networktocode.nautobot
