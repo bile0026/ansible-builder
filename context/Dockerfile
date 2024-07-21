@@ -1,40 +1,90 @@
-ARG EE_BASE_IMAGE=quay.io/ansible/ansible-runner:latest
-ARG EE_BUILDER_IMAGE=quay.io/ansible/ansible-builder:latest
+ARG EE_BASE_IMAGE="quay.io/fedora/fedora:latest"
+ARG PYCMD="/usr/bin/python3"
+ARG PKGMGR_PRESERVE_CACHE=""
+ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS=""
+ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS=""
+ARG ANSIBLE_INSTALL_REFS="ansible-core ansible-runner"
+ARG PKGMGR="/usr/bin/dnf"
 
-FROM $EE_BASE_IMAGE as galaxy
-ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS=
-ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS=
+# Base build stage
+FROM $EE_BASE_IMAGE AS base
 USER root
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ARG EE_BASE_IMAGE
+ARG PYCMD
+ARG PKGMGR_PRESERVE_CACHE
+ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS
+ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS
+ARG ANSIBLE_INSTALL_REFS
+ARG PKGMGR
 
-ADD _build /build
+COPY _build/scripts/ /output/scripts/
+COPY _build/scripts/entrypoint /opt/builder/bin/entrypoint
+RUN /output/scripts/pip_install $PYCMD
+RUN $PYCMD -m pip install --no-cache-dir $ANSIBLE_INSTALL_REFS
+
+# Galaxy build stage
+FROM base AS galaxy
+ARG EE_BASE_IMAGE
+ARG PYCMD
+ARG PKGMGR_PRESERVE_CACHE
+ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS
+ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS
+ARG ANSIBLE_INSTALL_REFS
+ARG PKGMGR
+
+RUN /output/scripts/check_galaxy
+COPY _build /build
 WORKDIR /build
 
+RUN mkdir -p /usr/share/ansible
 RUN ansible-galaxy role install $ANSIBLE_GALAXY_CLI_ROLE_OPTS -r requirements.yml --roles-path "/usr/share/ansible/roles"
 RUN ANSIBLE_GALAXY_DISABLE_GPG_VERIFY=1 ansible-galaxy collection install $ANSIBLE_GALAXY_CLI_COLLECTION_OPTS -r requirements.yml --collections-path "/usr/share/ansible/collections"
 
-FROM $EE_BUILDER_IMAGE as builder
+# Builder build stage
+FROM base AS builder
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+WORKDIR /build
+ARG EE_BASE_IMAGE
+ARG PYCMD
+ARG PKGMGR_PRESERVE_CACHE
+ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS
+ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS
+ARG ANSIBLE_INSTALL_REFS
+ARG PKGMGR
+
+RUN $PYCMD -m pip install --no-cache-dir bindep pyyaml packaging
 
 COPY --from=galaxy /usr/share/ansible /usr/share/ansible
 
-ADD _build/requirements.txt requirements.txt
-ADD _build/bindep.txt bindep.txt
-RUN ansible-builder introspect --sanitize --user-pip=requirements.txt --user-bindep=bindep.txt --write-bindep=/tmp/src/bindep.txt --write-pip=/tmp/src/requirements.txt
-RUN assemble
+COPY _build/requirements.txt requirements.txt
+COPY _build/bindep.txt bindep.txt
+RUN $PYCMD /output/scripts/introspect.py introspect --user-pip=requirements.txt --user-bindep=bindep.txt --write-bindep=/tmp/src/bindep.txt --write-pip=/tmp/src/requirements.txt
+RUN /output/scripts/assemble
 
-FROM $EE_BASE_IMAGE
-USER root
+# Final build stage
+FROM base AS final
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ARG EE_BASE_IMAGE
+ARG PYCMD
+ARG PKGMGR_PRESERVE_CACHE
+ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS
+ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS
+ARG ANSIBLE_INSTALL_REFS
+ARG PKGMGR
+
+RUN /output/scripts/check_ansible $PYCMD
 
 COPY --from=galaxy /usr/share/ansible /usr/share/ansible
 
 COPY --from=builder /output/ /output/
-RUN /output/install-from-bindep && rm -rf /output/wheels
-RUN alternatives --set python /usr/bin/python3
-COPY --from=quay.io/project-receptor/receptor:1.0.0 /usr/bin/receptor /usr/bin/receptor
-RUN mkdir -p /var/run/receptor
-ADD run.sh /run.sh
-CMD /run.sh
-RUN yum update -y
-RUN yum -y install sshpass && yum -y clean all  && rm -rf /var/cache
-USER 1000
-RUN git lfs install
+RUN /output/scripts/install-from-bindep && rm -rf /output/wheels
+RUN chmod ug+rw /etc/passwd
+RUN mkdir -p /runner && chgrp 0 /runner && chmod -R ug+rwx /runner
+WORKDIR /runner
+RUN $PYCMD -m pip install --no-cache-dir 'dumb-init==1.2.5'
+RUN rm -rf /output
 LABEL ansible-execution-environment=true
+USER 1000
+ENTRYPOINT ["/opt/builder/bin/entrypoint", "dumb-init"]
+CMD ["bash"]
