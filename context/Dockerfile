@@ -83,6 +83,7 @@ RUN chmod ug+rw /etc/passwd
 RUN mkdir -p /runner && chgrp 0 /runner && chmod -R ug+rwx /runner
 WORKDIR /runner
 RUN $PYCMD -m pip install --no-cache-dir 'dumb-init==1.2.5'
+RUN python3 -m pip install --upgrade pip
 RUN rm -rf /output
 LABEL ansible-execution-environment=true
 USER 1000
