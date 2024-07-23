@@ -22,7 +22,7 @@ additional_build_steps:
   append_final:
     - RUN python3 -m pip install --upgrade pip
     # - RUN apt-get update && apt-get install -y python3.10 python3.10-dev sshpass git-lfs && apt-get clean && rm -rf /var/lib/apt/lists/*
-    # - RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
+    - RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
     # - COPY --from=quay.io/project-receptor/receptor:1.0.0 /usr/bin/receptor /usr/bin/receptor
 #     - RUN mkdir -p /var/run/receptor
 #     - ADD run.sh /run.sh
