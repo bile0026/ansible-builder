@@ -1,20 +1,29 @@
 ---
-version: 1
+version: 3
+
+images:
+  base_image:
+    name: quay.io/ansible/ansible-runner:latest
+
 dependencies:
   galaxy: requirements.yml
   python: requirements.txt
   system: bindep.txt
 
-
 additional_build_steps:
-  append:
+  prepend_base:
+    - RUN yum update -y && yum clean all
+  prepend_builder:
+    - RUN yum update -y && yum clean all || true
+  prepend_final:
+    - RUN yum update -y && yum clean all
+  append_final:
     - RUN alternatives --set python /usr/bin/python3
     - COPY --from=quay.io/project-receptor/receptor:1.0.0 /usr/bin/receptor /usr/bin/receptor
     - RUN mkdir -p /var/run/receptor
     - ADD run.sh /run.sh
     - CMD /run.sh
-    - RUN yum update -y
-    - RUN yum -y install sshpass && yum -y clean all  && rm -rf /var/cache
+    - RUN yum update -y && yum -y install sshpass && yum -y clean all && rm -rf /var/cache
     - USER 1000 
     - RUN git lfs install
 
