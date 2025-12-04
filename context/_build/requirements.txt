@@ -1,3 +1,7 @@
 urllib3
-git+https://github.com/ansible/ansible-builder.git@devel#egg=ansible-builder
+ansible
+ansible-runner
+jmespath
+textfsm
+#git+https://github.com/ansible/ansible-builder.git@devel#egg=ansible-builder
 
