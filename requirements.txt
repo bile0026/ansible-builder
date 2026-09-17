@@ -1,5 +1,4 @@
-urllib3
-netmiko
-paramiko
-ansible-pylibssh
-git+https://github.com/ansible/ansible-builder.git@devel#egg=ansible-builder
+# Additions on top of quay.io/ansible/awx-ee:24.6.1 (Python 3.9).
+# paramiko (3.4.0) and urllib3 are already provided by the base image.
+netmiko>=4.6,<4.7
+ansible-pylibssh>=1.4,<1.5

@@ -1,9 +1,12 @@
 ---
 version: 3
 
+# Pinned to the EE that ships with AWX 24.6.1:
+#   CentOS Stream 9, Python 3.9 (/usr/bin/python3), ansible-core 2.15.12, ansible-runner 2.4.0
+# Collection pins in requirements.yml must stay compatible with ansible-core 2.15.
 images:
   base_image:
-    name: quay.io/ansible/ansible-runner:latest
+    name: quay.io/ansible/awx-ee:24.6.1
 
 dependencies:
   galaxy: requirements.yml
@@ -11,20 +14,6 @@ dependencies:
   system: bindep.txt
 
 additional_build_steps:
-  prepend_base:
-    - RUN yum update -y && yum clean all
-  prepend_builder:
-    - RUN yum update -y && yum clean all || true
-  prepend_final:
-    - RUN yum update -y && yum clean all
   append_final:
-    - RUN alternatives --set python /usr/bin/python3
-    - COPY --from=quay.io/project-receptor/receptor:1.0.0 /usr/bin/receptor /usr/bin/receptor
-    - RUN mkdir -p /var/run/receptor
-    - ADD run.sh /run.sh
-    - CMD /run.sh
-    - RUN yum update -y && yum -y install sshpass && yum -y clean all && rm -rf /var/cache
-    - USER 1000 
-    - RUN git lfs install
-
-
+    # append_final runs as root, so configure LFS system-wide rather than in /root
+    - RUN git lfs install --system

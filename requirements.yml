@@ -1,17 +1,32 @@
 ---
+# Pinned to the newest releases that still support ansible-core 2.15 (AWX 24.6.1 EE).
+# Newer releases of most of these require ansible-core >= 2.16, and ansible-galaxy
+# does not filter on requires_ansible, so leave the pins in place until the base moves.
+# ansible.posix (1.5.4) is already provided by the base image.
 collections:
-  - ansible.netcommon
-  - ansible.network
-  - community.general
-  - ansible.posix
-  - networktocode.nautobot
-  - community.routeros
-  - cisco.asa
-  - cisco.ios
-  - cisco.iosxr
-  - cisco.nxos
-  - junipernetworks.junos
-  - arista.eos
-  - paloaltonetworks.panos
-
-
+  - name: ansible.netcommon
+    version: "7.2.0"
+  - name: ansible.utils
+    version: "5.1.2"
+  - name: ansible.network
+    version: "5.0.0"
+  - name: community.general
+    version: "10.7.9"
+  - name: networktocode.nautobot
+    version: "5.9.0"
+  - name: community.routeros
+    version: "3.22.0"
+  - name: cisco.asa
+    version: "7.0.0"
+  - name: cisco.ios
+    version: "9.2.0"
+  - name: cisco.iosxr
+    version: "10.3.1"
+  - name: cisco.nxos
+    version: "9.4.0"
+  - name: junipernetworks.junos
+    version: "9.1.0"
+  - name: arista.eos
+    version: "10.1.1"
+  - name: paloaltonetworks.panos
+    version: "2.21.4"
