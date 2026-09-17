@@ -1,19 +1,29 @@
 ---
 version: 3
 
-# Pinned to the EE that ships with AWX 24.6.1:
-#   CentOS Stream 9, Python 3.9 (/usr/bin/python3), ansible-core 2.15.12, ansible-runner 2.4.0
-# Collection pins in requirements.yml must stay compatible with ansible-core 2.15.
+# Mirrors how upstream awx-ee (devel) is built: CentOS Stream 9 + Python 3.12,
+# with ansible-core held below 2.19 (the data tagging/templating rework) and
+# ansible-runner on the 2.4 line used by AWX 24.6.1.
 images:
   base_image:
-    name: quay.io/ansible/awx-ee:24.6.1
+    name: quay.io/centos/centos:stream9
 
 dependencies:
+  python_interpreter:
+    package_system: python3.12
+    python_path: /usr/bin/python3.12
+  ansible_core:
+    package_pip: ansible-core>=2.18.19,<2.19
+  ansible_runner:
+    package_pip: ansible-runner>=2.4.3,<2.5
   galaxy: requirements.yml
   python: requirements.txt
   system: bindep.txt
 
 additional_build_steps:
+  append_base:
+    - RUN $PYCMD -m pip install -U pip
   append_final:
     # append_final runs as root, so configure LFS system-wide rather than in /root
     - RUN git lfs install --system
+    - RUN alternatives --install /usr/bin/python python /usr/bin/python3.12 312

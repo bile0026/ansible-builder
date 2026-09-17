@@ -1,32 +1,38 @@
 ---
-# Pinned to the newest releases that still support ansible-core 2.15 (AWX 24.6.1 EE).
-# Newer releases of most of these require ansible-core >= 2.16, and ansible-galaxy
-# does not filter on requires_ansible, so leave the pins in place until the base moves.
-# ansible.posix (1.5.4) is already provided by the base image.
+# Pinned to current releases; all support ansible-core 2.18.
+# Check requires_ansible on Galaxy before bumping: ansible-galaxy does not skip
+# versions that need a newer ansible-core than the image has.
 collections:
   - name: ansible.netcommon
-    version: "7.2.0"
+    version: "8.7.0"
   - name: ansible.utils
-    version: "5.1.2"
+    version: "6.1.1"
   - name: ansible.network
     version: "5.0.0"
+  - name: ansible.posix
+    version: "2.2.2"
   - name: community.general
-    version: "10.7.9"
+    version: "13.4.0"
   - name: networktocode.nautobot
-    version: "5.9.0"
+    version: "6.3.0"
   - name: community.routeros
     version: "3.22.0"
   - name: cisco.asa
     version: "7.0.0"
   - name: cisco.ios
-    version: "9.2.0"
+    version: "11.6.0"
   - name: cisco.iosxr
-    version: "10.3.1"
+    version: "12.5.0"
   - name: cisco.nxos
-    version: "9.4.0"
+    version: "13.0.0"
   - name: junipernetworks.junos
-    version: "9.1.0"
+    version: "11.1.1"
   - name: arista.eos
-    version: "10.1.1"
+    version: "12.3.0"
   - name: paloaltonetworks.panos
-    version: "2.21.4"
+    version: "3.4.2"
+  # Transitive dependencies, pinned for reproducible builds
+  - name: juniper.device
+    version: "2.0.5"
+  - name: community.library_inventory_filtering_v1
+    version: "1.1.5"

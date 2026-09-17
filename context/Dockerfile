@@ -1,8 +1,10 @@
-ARG EE_BASE_IMAGE="quay.io/ansible/awx-ee:24.6.1"
-ARG PYCMD="/usr/bin/python3"
+ARG EE_BASE_IMAGE="quay.io/centos/centos:stream9"
+ARG PYCMD="/usr/bin/python3.12"
+ARG PYPKG="python3.12"
 ARG PKGMGR_PRESERVE_CACHE=""
 ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS=""
 ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS=""
+ARG ANSIBLE_INSTALL_REFS="ansible-core>=2.18.19,<2.19 ansible-runner>=2.4.3,<2.5"
 ARG PKGMGR="/usr/bin/dnf"
 
 # Base build stage
@@ -11,22 +13,29 @@ USER root
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ARG EE_BASE_IMAGE
 ARG PYCMD
+ARG PYPKG
 ARG PKGMGR_PRESERVE_CACHE
 ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS
 ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS
+ARG ANSIBLE_INSTALL_REFS
 ARG PKGMGR
 
 COPY _build/scripts/ /output/scripts/
 COPY _build/scripts/entrypoint /opt/builder/bin/entrypoint
+RUN $PKGMGR install $PYPKG -y ; if [ -z $PKGMGR_PRESERVE_CACHE ]; then $PKGMGR clean all; fi
 RUN /output/scripts/pip_install $PYCMD
+RUN $PYCMD -m pip install --no-cache-dir $ANSIBLE_INSTALL_REFS
+RUN $PYCMD -m pip install -U pip
 
 # Galaxy build stage
 FROM base AS galaxy
 ARG EE_BASE_IMAGE
 ARG PYCMD
+ARG PYPKG
 ARG PKGMGR_PRESERVE_CACHE
 ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS
 ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS
+ARG ANSIBLE_INSTALL_REFS
 ARG PKGMGR
 
 RUN /output/scripts/check_galaxy
@@ -43,9 +52,11 @@ ENV PIP_BREAK_SYSTEM_PACKAGES=1
 WORKDIR /build
 ARG EE_BASE_IMAGE
 ARG PYCMD
+ARG PYPKG
 ARG PKGMGR_PRESERVE_CACHE
 ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS
 ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS
+ARG ANSIBLE_INSTALL_REFS
 ARG PKGMGR
 
 RUN $PYCMD -m pip install --no-cache-dir bindep pyyaml packaging
@@ -62,9 +73,11 @@ FROM base AS final
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ARG EE_BASE_IMAGE
 ARG PYCMD
+ARG PYPKG
 ARG PKGMGR_PRESERVE_CACHE
 ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS
 ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS
+ARG ANSIBLE_INSTALL_REFS
 ARG PKGMGR
 
 RUN /output/scripts/check_ansible $PYCMD
@@ -78,6 +91,7 @@ RUN mkdir -p /runner && chgrp 0 /runner && chmod -R ug+rwx /runner
 WORKDIR /runner
 RUN $PYCMD -m pip install --no-cache-dir 'dumb-init==1.2.5'
 RUN git lfs install --system
+RUN alternatives --install /usr/bin/python python /usr/bin/python3.12 312
 RUN rm -rf /output
 LABEL ansible-execution-environment=true
 USER 1000
