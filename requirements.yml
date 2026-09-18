@@ -1,7 +1,15 @@
 ---
+# Pinned to the newest releases that still support ansible-core 2.15 (AWX 24.6.1 EE).
+# Newer releases require ansible-core >= 2.16, and ansible-galaxy does not filter on
+# requires_ansible, so leave the pins in place until the base moves.
+# ansible.posix (1.5.4) is already provided by the base image.
 collections:
-  - community.general
-  - ansible.posix
-  - community.docker
-  - networktocode.nautobot
-
+  - name: community.general
+    version: "10.7.9"
+  - name: community.docker
+    version: "4.8.8"
+  - name: networktocode.nautobot
+    version: "5.9.0"
+  # Transitive dependency of community.docker, pinned for reproducible builds
+  - name: community.library_inventory_filtering_v1
+    version: "1.1.5"

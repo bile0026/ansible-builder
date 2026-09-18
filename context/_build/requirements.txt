@@ -1,7 +1,3 @@
-urllib3
-ansible
-ansible-runner
-jmespath
-textfsm
-#git+https://github.com/ansible/ansible-builder.git@devel#egg=ansible-builder
-
+# Additions on top of quay.io/ansible/awx-ee:24.6.1 (Python 3.9).
+# ansible-core, ansible-runner, jmespath, and urllib3 are already provided by the base image.
+textfsm>=2.1,<3

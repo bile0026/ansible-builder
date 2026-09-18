@@ -1,4 +1,4 @@
-ARG EE_BASE_IMAGE="debian:latest"
+ARG EE_BASE_IMAGE="quay.io/ansible/awx-ee:24.6.1"
 ARG PYCMD="/usr/bin/python3"
 ARG PKGMGR_PRESERVE_CACHE=""
 ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS=""
@@ -18,12 +18,7 @@ ARG PKGMGR
 
 COPY _build/scripts/ /output/scripts/
 COPY _build/scripts/entrypoint /opt/builder/bin/entrypoint
-RUN apt-get update && apt-get upgrade -y && apt-get install -y python3 python3-pip python3-venv python3-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN python3 -m pip --version
-RUN sed -i 's|\$PYCMD -m ensurepip --root /|python3 -m pip --version \&\& echo "pip already installed"|g' /output/scripts/pip_install
 RUN /output/scripts/pip_install $PYCMD
-RUN python3 -m pip install --no-cache-dir ansible ansible-runner
-RUN apt-get update && apt-get upgrade -y && apt-get install -y subversion git-lfs && apt-get clean && rm -rf /var/lib/apt/lists/* || true
 
 # Galaxy build stage
 FROM base AS galaxy
@@ -54,9 +49,6 @@ ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS
 ARG PKGMGR
 
 RUN $PYCMD -m pip install --no-cache-dir bindep pyyaml packaging
-ENV PKGMGR=/usr/bin/apt-get
-RUN sed -i 's|/usr/bin/dnf|/usr/bin/apt-get|g' /output/scripts/assemble || true
-RUN sed -i 's|/usr/bin/dnf|/usr/bin/apt-get|g' /output/scripts/install-from-bindep || true
 
 COPY --from=galaxy /usr/share/ansible /usr/share/ansible
 
@@ -75,14 +67,6 @@ ARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS
 ARG ANSIBLE_GALAXY_CLI_ROLE_OPTS
 ARG PKGMGR
 
-RUN whoami
-RUN cat /etc/os-release
-ENV PKGMGR=/usr/bin/apt-get
-RUN sed -i 's|/usr/bin/dnf|/usr/bin/apt-get|g' /output/scripts/install-from-bindep || true
-RUN sed -i 's|\$PKGMGR clean all|apt-get clean|g' /output/scripts/install-from-bindep || true
-RUN sed -i 's|--enablerepo epel ||g' /output/scripts/install-from-bindep || true
-RUN sed -i 's|rm -rf /var/cache/{dnf,yum}||g' /output/scripts/install-from-bindep || true
-RUN sed -i 's|rm -rf /var/lib/dnf/history.*||g' /output/scripts/install-from-bindep || true
 RUN /output/scripts/check_ansible $PYCMD
 
 COPY --from=galaxy /usr/share/ansible /usr/share/ansible
@@ -93,11 +77,7 @@ RUN chmod ug+rw /etc/passwd
 RUN mkdir -p /runner && chgrp 0 /runner && chmod -R ug+rwx /runner
 WORKDIR /runner
 RUN $PYCMD -m pip install --no-cache-dir 'dumb-init==1.2.5'
-RUN apt-get update && apt-get upgrade -y && apt-get install -y sshpass git-lfs && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN git lfs install
-COPY --from=quay.io/project-receptor/receptor:1.0.0 /usr/bin/receptor /usr/bin/receptor
-RUN mkdir -p /var/run/receptor
-ADD run.sh /run.sh
+RUN git lfs install --system
 RUN rm -rf /output
 LABEL ansible-execution-environment=true
 USER 1000
